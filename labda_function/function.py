@@ -1,27 +1,72 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+import json
+import wget
+import os
+import glob
 from requests_oauthlib import OAuth1Session
+from urlparse import urljoin
+from pyquery import PyQuery as pq
+from pprint import pprint
 
-# Consumer Key          : CK
-# Consumer Secret       : CS
-# Access Token          : AT
-# Accesss Token Secert  : AS
+#スクレイピング開始 画像のダウンロード
+url = 'http://sugoroku.osaka/'
 
-CK = 'rT8ZIjnHYC5Iucm595Ys7JZLr'
-CS = 'PAPneNn8PCnyXinnzYvstjITUSp6y03FWJwf8J5eYc4VBj6USW'
-AT = '3343400353-HSk37wIT5jdM14DYNkHdhabHuAGttEdLxeQa61d'
-AS = 'uuNxAKJlUuFCG493GjBfMGkQmTJLe0WQpTE7RyMVrOBvs'
+dom = pq(url)
+result = set()
+for img in dom('img').items():
+    img_url = img.attr['src']
+    if img_url.startswith('http'):
+        result.add(img_url)
+    else:
+        result.add(urljoin(url, img_url))
 
-URL = 'https://api.twitter.com/1.1/statuses/update.json'
+pprint(result)
 
+i = 1
+for url in result:
+    filename = wget.download(url, "./images/"+str(i)+".jpg")
+    pprint(filename)
+    i = i+1
 
-def handler(event, context):
-#    msg = event['Records'][0]['Sns']['Message']
-    params = {"status": msg }
+# Twitter API
+CK = 'tesqN15WBtgAdUh7Vhmo324vx'
+CS = '9W0032VdGypVazVlDZrPkNnJ0q4kS5gWgsyAvBHhUOoAuxWBIm'
+AT = '4125247939-LDgZXnixcybiW4YrXPYbJug3qm8so8NVyfbx7kk'
+AS = 'SIYLMtd7s9w06NZuJSj91HLsWOswvpaLtKZmlnRKgznKg'
 
-    twitter = OAuth1Session(CK, CS, AT, AS)
-    req = twitter.post(URL, params = params)
+url_media = "https://upload.twitter.com/1.1/media/upload.json"
+url_text = "https://api.twitter.com/1.1/statuses/update.json"
 
-    if req.status_code == 200:
-        return msg
-    else:   
-        return req.status_code
+# OAuth認証 セッションを開始
+twitter = OAuth1Session(CK, CS, AT, AS)
 
+# 画像投稿
+files = {"media" : open('./images/1.jpg', 'rb')}
+req_media = twitter.post(url_media, files = files)
+
+# レスポンスを確認
+if req_media.status_code != 200:
+    print ("画像アップデート失敗: %s", req_media.text)
+    exit()
+
+# Media ID を取得
+media_id = json.loads(req_media.text)['media_id']
+print ("Media ID: %d" % media_id)
+
+# Media ID を付加してテキストを投稿
+params = {'status': '画像投稿テスト', "media_ids": [media_id]}
+req_media = twitter.post(url_text, params = params)
+
+# 再びレスポンスを確認
+if req_media.status_code != 200:
+    print ("テキストアップデート失敗: %s", req_text.text)
+    exit()
+
+test = './images/*'
+r = glob.glob(test)
+for i in r:
+   os.remove(i)
+
+print ("OK")
