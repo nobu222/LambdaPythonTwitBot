@@ -1,5 +1,5 @@
 from requests_oauthlib import OAuth1Session
-import commands, boto3, re, json
+import commands, boto3, re, json, datetime
 
 # Twitter API
 CK = 'tesqN15WBtgAdUh7Vhmo324vx'
@@ -9,13 +9,19 @@ AS = 'SIYLMtd7s9w06NZuJSj91HLsWOswvpaLtKZmlnRKgznKg'
 
 UPDATE_URL = 'https://api.twitter.com/1.1/statuses/update.json'
 
-AWS_S3_BUCKET_NAME = "***" # * enter your backet name *
+AWS_S3_BUCKET_NAME = "osaka-sugoroku-bot" # * enter your backet name *
 
 def _(cmd):
     return commands.getoutput(cmd)
 
+def _objexists(bucket, key) -> bool:
+    return 'Contents' in s3client.list_objects(Prefix=key, Bucket=bucket)
+
 # get "keyName" obj from S3
 def _getTweetList(keyName):
+    if( !_objexists(AWS_S3_BUCKET_NAME, keyName) ):
+        return false
+
     s3 = boto3.resource('s3', region_name='ap-northeast-1')
     bucket = s3.Bucket(AWS_S3_BUCKET_NAME)
     obj = bucket.Object(keyName)
@@ -37,7 +43,8 @@ def _tweet(text):
 
 def handler(event, context):
     # yyyy_mm.js
-    GET_OBJECT_KEY_NAME = _('date +"%Y_%m" --date "1 year ago"') + ".js"
+    today = datetime.datetime.now().strftime("%Y%m%d")
+    GET_OBJECT_KEY_NAME = today + ".json"
     tweetList = _getTweetList(GET_OBJECT_KEY_NAME)
 
     # delete first line ("Grailbird.data.tweets_yyyy_mm =")
