@@ -1,7 +1,7 @@
 from datetime import datetime
 from boto3 import Session, resource
 from requests_oauthlib import OAuth1Session
-import sys
+import sys, json, datetime
 
 # Twitter API
 CK = 'tesqN15WBtgAdUh7Vhmo324vx'
@@ -41,4 +41,25 @@ def lambda_handler(event, context):
     # ret = _tweet("hogehoge")
     # ret = _exists(AWS_S3_BUCKET_NAME, '20160209.json')
     ret = _getTweetList('20160209.json')
-    return ret.encode('utf-8')
+
+    today = datetime.datetime.now().strftime("%Y%m%d")
+    object_name = today + ".json"
+    json_data = _getTweetList(object_name)
+
+    if ( json_data != False ):
+        tweets = json.loads(json_data)
+        now = datetime.datetime.now() # get current time
+        td_now = datetime.timedelta(hours=now.hour, minutes=now.minute)
+
+        targetTweetList = []
+        for tweet in tweets:
+            td_tweet = datetime.timedelta(hours=tweet["hour"], minutes=tweet["minute"])
+            if(td_now < td_tweet and (td_tweet - td_now).seconds/60 < INTERVAL):
+                targetTweetList.append( tweet["text"] )
+    else:
+        print "no data"
+
+    for text in targetTweetList:
+        _tweet(text)
+
+    return
