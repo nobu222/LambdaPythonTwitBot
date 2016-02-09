@@ -1,32 +1,44 @@
 from datetime import datetime
-from urllib2 import urlopen
-import requests # XXX added
- 
-SITE = 'https://www.amazon.com/'  # URL of the site to check
-EXPECTED = 'Online Shopping'  # String expected to be on the page
- 
- 
-def validate(res):
-    '''Return False to trigger the canary
- 
-    Currently this simply checks whether the EXPECTED string is present.
-    However, you could modify this to perform any number of arbitrary
-    checks on the contents of SITE.
-    '''
-    return EXPECTED in res
- 
- 
-def lambda_handler(event, context):
-    print('Checking {} at {}...'.format(SITE, event['time']))
-    try:
-        #if not validate(urlopen(SITE).read()):
-        if not validate(requests.get(SITE).text): # XXX changed
-            raise Exception('Validation failed')
-    except:
-        print('Check failed!')
-        raise
+from boto3 import Session, resource
+from requests_oauthlib import OAuth1Session
+import sys
+
+# Twitter API
+CK = 'tesqN15WBtgAdUh7Vhmo324vx'
+CS = '9W0032VdGypVazVlDZrPkNnJ0q4kS5gWgsyAvBHhUOoAuxWBIm'
+AT = '4125247939-LDgZXnixcybiW4YrXPYbJug3qm8so8NVyfbx7kk'
+AS = 'SIYLMtd7s9w06NZuJSj91HLsWOswvpaLtKZmlnRKgznKg'
+
+UPDATE_URL = 'https://api.twitter.com/1.1/statuses/update.json'
+AWS_S3_BUCKET_NAME = "osaka-sugoroku-bot" # * enter your backet name *
+INTERVAL = 10
+
+def _exists(bucket, key):
+    return 'Contents' in Session().client('s3').list_objects(Prefix=key, Bucket=bucket)
+
+def _getTweetList(keyName):
+    if( _exists(AWS_S3_BUCKET_NAME, keyName) == False ):
+        print("No JSON FILE"); return False
+
+    s3 = resource('s3', region_name='ap-northeast-1')
+    obj = s3.Bucket(AWS_S3_BUCKET_NAME).Object(keyName)
+
+    response = obj.get()
+    body = response['Body'].read()
+    return body.decode('utf-8')
+
+def _tweet(text):
+    params = {"status": text}
+    tw = OAuth1Session(CK, CS, AT, AS)
+    req = tw.post(UPDATE_URL, params = params)
+
+    if req.status_code == 200:
+        return text
     else:
-        print('Check passed!')
-        return event['time']
-    finally:
-        print('Check complete at {}'.format(str(datetime.now())))
+        return req.status_code
+
+def lambda_handler(event, context):
+    # ret = _tweet("hogehoge")
+    # ret = _exists(AWS_S3_BUCKET_NAME, '20160209.json')
+    ret = _getTweetList('20160209.json')
+    return ret.encode('utf-8')
