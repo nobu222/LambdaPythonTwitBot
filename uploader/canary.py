@@ -19,9 +19,10 @@ AS = 'SIYLMtd7s9w06NZuJSj91HLsWOswvpaLtKZmlnRKgznKg'
 UPDATE_URL = 'https://api.twitter.com/1.1/statuses/update.json'
 UPDATE_MEDIA = 'https://upload.twitter.com/1.1/media/upload.json'
 IMAGES_SELECTOR = '.sing-cop,.pageImg'
+IMAGES_NUM = 4
 
 AWS_S3_BUCKET_NAME = "osaka-sugoroku-bot" # * enter your backet name *
-INTERVAL = 10
+INTERVAL = 5
 
 def _exists(bucket, key):
     return 'Contents' in Session().client('s3').list_objects(Prefix=key, Bucket=bucket)
@@ -34,7 +35,11 @@ def _getImages(url):
     for img in soup.select(IMAGES_SELECTOR):
         img_urls.append(img['src']) 
 
-    fetch_urls = random.sample(img_urls, 4)
+    if len(img_urls) > IMAGES_NUM:
+        fetch_urls = random.sample(img_urls, IMAGES_NUM)
+    else:
+        fetch_urls = img_urls
+
     filenames = []
     count = 1
     for img_url in fetch_urls:
@@ -93,15 +98,9 @@ def _testAllFunction(event, context):
 
 def lambda_handler(event, context):
     ret = {}
-
-    now = datetime.now()
-    pprint(now)
-
     jst = pytz.timezone('Asia/Tokyo')
     jst_now = datetime.now(jst)
-    pprint(jst_now)
 
-    # today = datetime.now().strftime("%Y%m%d")
     today = jst_now.strftime("%Y%m%d")
     object_name = today + ".json"
     pprint(object_name)
@@ -110,22 +109,15 @@ def lambda_handler(event, context):
 
     if ( json_data != False ):
         tweets = json.loads(json_data)
-        # now = datetime.now() # get current time
         td_now = timedelta(hours=jst_now.hour, minutes=jst_now.minute)
         ret['main'] = [{'now': str(jst_now.hour)+':'+str(jst_now.minute)}]
 
         targetTweetList = []
         for tweet in tweets:
             td_tweet = timedelta(hours=tweet["hour"], minutes=tweet["minute"])
-            pprint(td_now)
-            pprint(td_tweet)
-            pprint(td_now < td_tweet)
-            pprint((td_tweet - td_now).seconds/60 < INTERVAL)
-            pprint((td_tweet - td_now).seconds/60)
-            pprint(tweet)
-
             if(td_now < td_tweet and (td_tweet - td_now).seconds/60 < INTERVAL):
-                targetTweetList.append( { "text" : tweet["text"], "link": tweet["link"] } )
+                # targetTweetList.append( { "text" : tweet["text"], "link": tweet["link"] } )
+                targetTweetList.append( { "text" : str(tweet["hour"])+":"+str(tweet["minute"]),"link": tweet["link"] } )
 
         pprint(targetTweetList)
         for ttweet in targetTweetList:
