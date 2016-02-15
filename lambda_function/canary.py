@@ -22,7 +22,7 @@ IMAGES_SELECTOR = '.sing-cop,.pageImg'
 IMAGES_NUM = 4
 
 AWS_S3_BUCKET_NAME = "osaka-sugoroku-bot" # * enter your backet name *
-INTERVAL = 5
+INTERVAL = 1
 
 def _exists(bucket, key):
     return 'Contents' in Session().client('s3').list_objects(Prefix=key, Bucket=bucket)
@@ -115,9 +115,9 @@ def lambda_handler(event, context):
         targetTweetList = []
         for tweet in tweets:
             td_tweet = timedelta(hours=tweet["hour"], minutes=tweet["minute"])
-            if(td_now < td_tweet and (td_tweet - td_now).seconds/60 < INTERVAL):
-                # targetTweetList.append( { "text" : tweet["text"], "link": tweet["link"] } )
-                targetTweetList.append( { "text" : str(tweet["hour"])+":"+str(tweet["minute"]),"link": tweet["link"] } )
+            if(td_now < td_tweet and (td_tweet - td_now).seconds/60 <= INTERVAL):
+                pprint(tweet)
+                targetTweetList.append( { "text" : tweet["text"], "link": tweet["link"] } )
 
         pprint(targetTweetList)
         for ttweet in targetTweetList:
