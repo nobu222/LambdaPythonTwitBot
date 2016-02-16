@@ -24,21 +24,37 @@ IMAGES_SELECTOR = '.sing-cop,.pageImg'
 IMAGES_NUM = 4
 
 AWS_S3_BUCKET_NAME = "osaka-sugoroku-bot" # * enter your backet name *
-INTERVAL = 1
 
 def _exists(bucket, key):
     return 'Contents' in Session().client('s3').list_objects(Prefix=key, Bucket=bucket)
 
-def _getTweetList(keyName):
-    if( _exists(AWS_S3_BUCKET_NAME, keyName) == False ):
+def _getS3Object(object_name):
+    if( _exists(AWS_S3_BUCKET_NAME, object_name) == False ):
         print("No JSON FILE"); return False
 
     s3 = resource('s3', region_name='ap-northeast-1')
-    obj = s3.Bucket(AWS_S3_BUCKET_NAME).Object(keyName)
-
+    obj = s3.Bucket(AWS_S3_BUCKET_NAME).Object(object_name)
     response = obj.get()
     body = response['Body'].read()
+
     return body.decode('utf-8')
+
+def _checkTimeList(time):
+    body = _getS3Object('TimeList.json')
+    list = json.loads(body)
+    for row in list:
+        if (time.hour == int(row['hour'])):
+            for k,v in row.iteritems():
+                if (k != 'hour' and k != 'tweet' and time.minute == v):
+                    return True
+    return False
+
+def _pickupTweet():
+    body = _getS3Object('TweetList.json')
+    list = json.loads(body)
+    tweet = list[random.randint(0,len(list))]
+
+    return tweet
 
 def _getImages(url):
     img_urls = []
@@ -88,47 +104,19 @@ def _tweet(text, media_ids):
     else:
         return req.status_code
 
-def _testAllFunction(event, context):
-    ret = {}
-    ret['getImages']        = _getImages("http://sugoroku.osaka/?p=6185")
-    ret['uploadTweetImage'] = _uploadTweetImage([TMP_DIR+'/1.jpg', TMP_DIR+'/2.jpg', TMP_DIR+'/3.jpg', TMP_DIR+'/4.jpg'])
-    ret['tweet']            = _tweet("Hello", [])
-    ret['exists']           = _exists(AWS_S3_BUCKET_NAME, '20160209.json')
-    ret['getTweetList']     = _getTweetList('20160209.json')
-
-    return ret
-
 def lambda_handler(event, context):
     ret = {}
     jst = pytz.timezone('Asia/Tokyo')
     jst_now = datetime.now(jst)
 
-    today = jst_now.strftime("%Y%m%d")
-    object_name = today + ".json"
-    pprint(object_name)
-
-    json_data = _getTweetList(object_name)
-
-    if ( json_data != False ):
-        tweets = json.loads(json_data)
-        td_now = timedelta(hours=jst_now.hour, minutes=jst_now.minute)
-        ret['main'] = [{'now': str(jst_now.hour)+':'+str(jst_now.minute)}]
-
-        targetTweetList = []
-        for tweet in tweets:
-            td_tweet = timedelta(hours=tweet["hour"], minutes=tweet["minute"])
-            if(td_now < td_tweet and (td_tweet - td_now).seconds/60 <= INTERVAL):
-                pprint(tweet)
-                targetTweetList.append( { "text" : tweet["text"], "link": tweet["link"] } )
-
-        pprint(targetTweetList)
-        for ttweet in targetTweetList:
-            images = _getImages(ttweet["link"])
-            media_ids = _uploadTweetImage(images)
-            status = _tweet(ttweet["text"], media_ids)
-            ret['main'].append(status)
-
+    flag = _checkTimeList(jst_now)
+    if (flag):
+        tweet = _pickupTweet()
+        images = _getImages(tweet["link"])
+        media_ids = _uploadTweetImage(images)
+        status = _tweet(tweet["text"], media_ids)
+        return status
     else:
-        ret['main'] = "no data"
+        pprint(flag)
+        return flag
 
-    return ret

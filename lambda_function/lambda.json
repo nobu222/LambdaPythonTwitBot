@@ -1,8 +1,8 @@
 {
-    "name": "Canary",
+    "name": "FollowCheck",
     "description": "Osaka Sugoroku LamdaFunction",
     "region": "ap-northeast-1",
-    "handler": "canary.lambda_handler",
+    "handler": "follow_check.lambda_handler",
     "role": "arn:aws:iam::274540079446:role/lambda_s3_exec_role",
     "timeout": 300,
     "memory": 128
