@@ -4,10 +4,10 @@ from pprint import pprint
 import json
 
 # Twitter API
-CK = 'tesqN15WBtgAdUh7Vhmo324vx'
-CS = '9W0032VdGypVazVlDZrPkNnJ0q4kS5gWgsyAvBHhUOoAuxWBIm'
-AT = '4125247939-LDgZXnixcybiW4YrXPYbJug3qm8so8NVyfbx7kk'
-AS = 'SIYLMtd7s9w06NZuJSj91HLsWOswvpaLtKZmlnRKgznKg'
+CK = 'Your APIs'
+CS = 'Your APIs'
+AT = 'Your APIs'
+AS = 'Your APIs'
 
 FOLLOWERS_LIST_URL     = 'https://api.twitter.com/1.1/followers/list.json'
 FRIENDSHIPS_CREATE_URL = 'https://api.twitter.com/1.1/friendships/create.json'

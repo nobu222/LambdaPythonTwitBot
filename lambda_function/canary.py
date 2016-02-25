@@ -11,19 +11,19 @@ import urllib
 import json
 
 # Twitter API
-CK = 'tesqN15WBtgAdUh7Vhmo324vx'
-CS = '9W0032VdGypVazVlDZrPkNnJ0q4kS5gWgsyAvBHhUOoAuxWBIm'
-AT = '4125247939-LDgZXnixcybiW4YrXPYbJug3qm8so8NVyfbx7kk'
-AS = 'SIYLMtd7s9w06NZuJSj91HLsWOswvpaLtKZmlnRKgznKg'
+CK = 'Your APIs'
+CS = 'Your APIs'
+AT = 'Your APIs'
+AS = 'Your APIs'
 
 TMP_DIR = '/tmp'
 
 UPDATE_URL = 'https://api.twitter.com/1.1/statuses/update.json'
 UPDATE_MEDIA = 'https://upload.twitter.com/1.1/media/upload.json'
-IMAGES_SELECTOR = '.sing-cop,.pageImg'
+IMAGES_SELECTOR = 'img'
 IMAGES_NUM = 4
 
-AWS_S3_BUCKET_NAME = "osaka-sugoroku-bot" # * enter your backet name *
+AWS_S3_BUCKET_NAME = "enter your backet name" # * enter your backet name *
 INTERVAL = 1
 
 def _exists(bucket, key):
@@ -90,7 +90,7 @@ def _tweet(text, media_ids):
 
 def _testAllFunction(event, context):
     ret = {}
-    ret['getImages']        = _getImages("http://sugoroku.osaka/?p=6185")
+    ret['getImages']        = _getImages("http://yahoo.co.jp")
     ret['uploadTweetImage'] = _uploadTweetImage([TMP_DIR+'/1.jpg', TMP_DIR+'/2.jpg', TMP_DIR+'/3.jpg', TMP_DIR+'/4.jpg'])
     ret['tweet']            = _tweet("Hello", [])
     ret['exists']           = _exists(AWS_S3_BUCKET_NAME, '20160209.json')

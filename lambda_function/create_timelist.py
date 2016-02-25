@@ -3,7 +3,7 @@ from pprint import pprint
 import json, random
 
 TMP_DIR = '/tmp'
-AWS_S3_BUCKET_NAME = "osaka-sugoroku-bot" # * enter your backet name *
+AWS_S3_BUCKET_NAME = "* enter your backet name *"
 AWS_S3_OBJECT_NAME = "TimeList.json"
 
 def _exists(bucket, key):
